@@ -1,0 +1,39 @@
+{
+  "name": "pi-otel",
+  "version": "0.1.0",
+  "description": "OpenTelemetry tracing extension for pi-coding-agent",
+  "type": "module",
+  "license": "MIT",
+  "keywords": [
+    "pi-package",
+    "pi",
+    "pi-coding-agent",
+    "opentelemetry",
+    "otel",
+    "tracing"
+  ],
+  "files": [
+    "extensions",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "echo 'No build step required'",
+    "check": "echo 'No static checks configured'"
+  },
+  "pi": {
+    "extensions": [
+      "./extensions/pi-otel.ts"
+    ]
+  },
+  "dependencies": {
+    "@opentelemetry/api": "^1.9.0",
+    "@opentelemetry/exporter-trace-otlp-grpc": "^0.213.0",
+    "@opentelemetry/exporter-trace-otlp-proto": "^0.213.0",
+    "@opentelemetry/resources": "^2.6.0",
+    "@opentelemetry/sdk-trace-base": "^2.6.0",
+    "@opentelemetry/semantic-conventions": "^1.40.0"
+  },
+  "peerDependencies": {
+    "@mariozechner/pi-coding-agent": "*"
+  }
+}
