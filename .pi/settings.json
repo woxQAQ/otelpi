@@ -1,8 +1,7 @@
 {
   "piOtel": {
     "exporters": [
-      "otlp_http",
-      "console"
+      "otlp_http"
     ],
     "httpEndpoint": "http://127.0.0.1:10428/insert/opentelemetry/v1/traces",
     "serviceName": "pi",

@@ -13,7 +13,8 @@
     "tracing"
   ],
   "files": [
-    "extensions",
+    "lib",
+    "pi-otel.ts",
     "README.md"
   ],
   "scripts": {
@@ -22,7 +23,7 @@
   },
   "pi": {
     "extensions": [
-      "./extensions/pi-otel.ts"
+      "./pi-otel.ts"
     ]
   },
   "dependencies": {
