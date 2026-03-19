@@ -1,5 +1,5 @@
 {
-  "name": "pi-otel",
+  "name": "otelpi",
   "version": "0.0.1",
   "description": "OpenTelemetry tracing extension for pi-coding-agent",
   "author": "woxqaq",
