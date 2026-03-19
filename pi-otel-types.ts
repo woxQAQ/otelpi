@@ -2,7 +2,7 @@ import type { Span, Tracer } from "@opentelemetry/api";
 import type { BasicTracerProvider } from "@opentelemetry/sdk-trace-base";
 
 export const EXTENSION_NAME = "pi-otel";
-export const EXTENSION_VERSION = "0.1.0";
+export const EXTENSION_VERSION = "0.0.1";
 export const STATUS_KEY = "pi-otel";
 export const DEFAULT_SERVICE_NAME = "pi-otel";
 export const DEFAULT_SUMMARY_LENGTH = 256;

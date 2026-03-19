@@ -8,9 +8,9 @@ import {
   summarizeAgentMessages,
   summarizeText,
   summarizeValue,
-} from "./lib/pi-otel-attributes.js";
-import { createRuntime, endRequestSpan, endTurnSpan, getParentSpanContext, markEvent, recordStandaloneSpan, setStatusLabel, syncUiState } from "./lib/pi-otel-runtime.js";
-import type { Attributes } from "./lib/pi-otel-types.js";
+} from "./pi-otel-attributes.js";
+import { createRuntime, endRequestSpan, endTurnSpan, getParentSpanContext, markEvent, recordStandaloneSpan, setStatusLabel, syncUiState } from "./pi-otel-runtime.js";
+import type { Attributes } from "./pi-otel-types.js";
 
 type PendingSessionKey = "pendingSessionSwitch" | "pendingSessionFork" | "pendingSessionCompact" | "pendingSessionTree";
 
