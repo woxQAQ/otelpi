@@ -58,25 +58,31 @@ export interface ResolvedConfig {
   error?: string;
 }
 
-export interface ToolSpanState {
+export interface TimedSpanState {
   span: Span;
-  toolName: string;
   startedAt: number;
+}
+
+export interface ToolSpanState extends TimedSpanState {
+  toolName: string;
   updateCount: number;
 }
 
-export interface TurnSpanState {
-  span: Span;
+export interface MessageSpanState extends TimedSpanState {
+  role: string;
+  updateCount: number;
+  firstUpdateAt?: number;
+  firstUpdateType?: string;
+}
+
+export interface TurnSpanState extends TimedSpanState {
   index: number;
-  startedAt: number;
   providerRequestCount: number;
   firstOutputAt?: number;
 }
 
-export interface RequestSpanState {
-  span: Span;
+export interface RequestSpanState extends TimedSpanState {
   sequence: number;
-  startedAt: number;
   providerRequestCount: number;
 }
 
@@ -91,5 +97,10 @@ export interface RuntimeState {
   eventCounts: Record<string, number>;
   activeRequest?: RequestSpanState;
   activeTurn?: TurnSpanState;
+  activeMessage?: MessageSpanState;
+  pendingSessionSwitch?: TimedSpanState;
+  pendingSessionFork?: TimedSpanState;
+  pendingSessionCompact?: TimedSpanState;
+  pendingSessionTree?: TimedSpanState;
   toolSpans: Map<string, ToolSpanState>;
 }

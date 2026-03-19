@@ -190,7 +190,12 @@ export function buildStatusLines(state: RuntimeState): string[] {
     `events.agent_end=${state.eventCounts.agent_end ?? 0}`,
     `active.request=${state.activeRequest ? String(state.activeRequest.sequence) : "none"}`,
     `active.turn=${state.activeTurn ? String(state.activeTurn.index) : "none"}`,
+    `active.message=${state.activeMessage ? state.activeMessage.role : "none"}`,
     `active.tools=${state.toolSpans.size}`,
+    `pending.session_switch=${state.pendingSessionSwitch ? "yes" : "no"}`,
+    `pending.session_fork=${state.pendingSessionFork ? "yes" : "no"}`,
+    `pending.session_compact=${state.pendingSessionCompact ? "yes" : "no"}`,
+    `pending.session_tree=${state.pendingSessionTree ? "yes" : "no"}`,
     `warnings=${config.warnings.length > 0 ? config.warnings.join(" | ") : "none"}`,
     `error=${state.error ?? "none"}`,
   ];

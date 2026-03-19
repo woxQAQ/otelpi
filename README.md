@@ -2,25 +2,56 @@
 
 OpenTelemetry tracing extension for `pi-coding-agent`.
 
-This package traces pi agent activity through extension hooks only. The MVP focuses on traces, not metrics or logs, and does not wrap model providers.
+`pi-otel` emits spans from pi extension hooks. It focuses on tracing request, turn, tool, and session activity without wrapping model providers or collecting metrics/logs.
 
-## What It Traces
+## Highlights
 
-- request lifecycle: `before_agent_start` -> `agent_end`
-- turn lifecycle: `turn_start` -> `turn_end`
-- tool execution: `tool_execution_start` -> `tool_execution_end`
-- provider request metadata from `before_provider_request`
-- low-frequency session and model events such as session start, switch, compaction, tree navigation, and model selection
+- traces the main pi lifecycle: request, turn, and tool execution
+- records session and model events such as session start, switch, fork, tree navigation, compaction, and model selection
+- attaches provider request metadata to the active request or turn span
+- keeps raw content off by default and stores hashes, counts, and durations instead
+- supports console, OTLP HTTP, and OTLP gRPC exporters
+- reads config from pi settings files and environment variables
 
 ## Privacy Defaults
 
-By default the extension records metadata, counts, durations, and SHA-256 hashes.
+By default, the extension emits metadata only:
 
-It does not emit raw prompt text, provider payloads, tool arguments, or tool results unless you opt in with environment variables.
+- counts
+- durations
+- IDs and basic labels
+- SHA-256 hashes of prompts and structured payloads
 
-## Install And Load
+It does not emit raw prompt text, provider payloads, tool arguments, or tool results unless you opt in.
 
-### Local path during development
+## Span Model
+
+Core spans:
+
+- `pi.request`
+- `pi.turn`
+- `pi.tool`
+
+Standalone event spans:
+
+- `pi.session_start`
+- `pi.session_switch`
+- `pi.session_fork`
+- `pi.session_tree`
+- `pi.session_compact`
+- `pi.model_select`
+
+Additional provider request details are attached as `provider.request` events on the active request or turn span.
+
+Typical hierarchy:
+
+- `pi.request`
+- child `pi.turn`
+- child `pi.tool`
+
+## Quick Start
+
+### Load from a local path
 
 ```bash
 pi -e /absolute/path/to/pi-otel
@@ -32,21 +63,19 @@ pi -e /absolute/path/to/pi-otel
 pi install /absolute/path/to/pi-otel -l
 ```
 
-### Publish later
+This repository is already structured as a normal npm package with a `pi` manifest, so it can also be published to npm or installed from git later.
 
-The repo is a normal npm package with a `pi` manifest, so the same layout can be published to npm or installed from git later.
+## Exporters
 
-## Exporter Configuration
+If you do not configure anything, `pi-otel` defaults to the `console` exporter.
 
-The extension supports console, OTLP HTTP, and OTLP gRPC exporters.
+In pi's interactive TUI, console span output is muted automatically so traces do not spill into the UI. Set `PI_OTEL_CONSOLE_IN_UI=1` to allow console exporter output inside the TUI.
 
 ### Console
 
 ```bash
 OTEL_TRACES_EXPORTER=console pi -e /absolute/path/to/pi-otel
 ```
-
-The console exporter is muted automatically in pi's interactive TUI so spans do not spill into the main UI. Set `PI_OTEL_CONSOLE_IN_UI=1` if you want to see raw console span dumps there.
 
 ### OTLP HTTP
 
@@ -68,7 +97,7 @@ pi -e /absolute/path/to/pi-otel
 
 ### Multiple exporters
 
-The extension also accepts `PI_OTEL_EXPORTERS` as a comma-separated override.
+`PI_OTEL_EXPORTERS` is an extension-specific override that accepts a comma-separated list.
 
 ```bash
 PI_OTEL_EXPORTERS=console,otlp_http \
@@ -76,7 +105,7 @@ OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://127.0.0.1:4318/v1/traces \
 pi -e /absolute/path/to/pi-otel
 ```
 
-Supported tokens:
+Supported exporter tokens:
 
 - `console`
 - `otlp`
@@ -86,20 +115,23 @@ Supported tokens:
 - `grpc`
 - `none`
 
-`otlp` follows `OTEL_EXPORTER_OTLP_TRACES_PROTOCOL` or `OTEL_EXPORTER_OTLP_PROTOCOL`.
+Notes:
 
-## Config Files
+- `otlp` resolves to HTTP or gRPC using `OTEL_EXPORTER_OTLP_TRACES_PROTOCOL` or `OTEL_EXPORTER_OTLP_PROTOCOL`
+- `none` disables exporting without uninstalling the extension
+- `PI_OTEL_EXPORTERS` takes precedence over `OTEL_TRACES_EXPORTER`
 
-The extension can now read its behavior from pi settings files:
+## Configuration Sources
 
-- global: `~/.pi/agent/settings.json`
-- project: `.pi/settings.json`
+Configuration is resolved in this order:
 
-It looks for a `piOtel` object. For convenience, it also accepts `"pi-otel"` as an alternate key.
+1. environment variables
+2. project settings in `.pi/settings.json`
+3. global settings in `~/.pi/agent/settings.json`
 
-Project config overrides global config. Environment variables override both.
+The extension looks for a `piOtel` object. It also accepts `"pi-otel"` as an alternate key.
 
-Example:
+Example project config:
 
 ```json
 {
@@ -120,7 +152,7 @@ Example:
 }
 ```
 
-Supported config keys under `piOtel`:
+Supported config keys under `piOtel` or `pi-otel`:
 
 - `enabled`: boolean
 - `exporters`: string or string[]
@@ -135,38 +167,41 @@ Supported config keys under `piOtel`:
 - `capture.toolArgs`: boolean
 - `capture.toolResults`: boolean
 
-## Extension-Specific Environment Variables
+## Environment Variables
 
-- `PI_OTEL_ENABLED=0|1`: disable or enable the extension regardless of config file
-- `PI_OTEL_SERVICE_NAME`: override the emitted `service.name` resource attribute
-- `PI_OTEL_SERVICE_VERSION`: override the emitted `service.version` resource attribute
+Extension-specific overrides:
+
+- `PI_OTEL_ENABLED=0|1`: force-disable or force-enable the extension
+- `PI_OTEL_SERVICE_NAME`: override the emitted `service.name`
+- `PI_OTEL_SERVICE_VERSION`: override the emitted `service.version`
 - `PI_OTEL_EXPORTERS`: comma-separated exporter override
-- `PI_OTEL_HTTP_ENDPOINT`: optional explicit OTLP HTTP endpoint override
-- `PI_OTEL_GRPC_ENDPOINT`: optional explicit OTLP gRPC endpoint override
-- `PI_OTEL_CONSOLE_IN_UI=0|1`: allow or mute console exporter output inside the interactive TUI
-- `PI_OTEL_SUMMARY_LENGTH`: max stored raw preview length when raw capture is enabled
+- `PI_OTEL_HTTP_ENDPOINT`: explicit OTLP HTTP endpoint
+- `PI_OTEL_GRPC_ENDPOINT`: explicit OTLP gRPC endpoint
+- `PI_OTEL_CONSOLE_IN_UI=0|1`: allow or mute console output in the TUI
+- `PI_OTEL_SUMMARY_LENGTH`: max raw preview length when raw capture is enabled
 - `PI_OTEL_CAPTURE_PROMPTS=1`: include raw prompt text
 - `PI_OTEL_CAPTURE_PROVIDER_PAYLOADS=1`: include raw provider payloads
 - `PI_OTEL_CAPTURE_TOOL_ARGS=1`: include raw tool arguments
 - `PI_OTEL_CAPTURE_TOOL_RESULTS=1`: include raw tool results
 
-## Diagnostics Commands
+Related OpenTelemetry variables:
+
+- `OTEL_TRACES_EXPORTER`
+- `OTEL_EXPORTER_OTLP_TRACES_PROTOCOL`
+- `OTEL_EXPORTER_OTLP_PROTOCOL`
+- `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT`
+- `OTEL_SERVICE_NAME`
+
+## Runtime Commands
 
 After loading the extension, these commands are available:
 
-- `/otel-status`: print current tracer configuration and runtime state
+- `/otel-status`: print resolved config, runtime state, warnings, and recent event counters
 - `/otel-flush`: force-flush pending spans
 
-## Expected Span Shape
+## Verification
 
-- `pi.request`
-- `pi.turn`
-- `pi.tool`
-- standalone event spans such as `pi.session_start`, `pi.session_switch`, `pi.session_compact`, and `pi.model_select`
-
-Provider request payload information is attached as events on the active request or turn span.
-
-## Manual Verification
+A quick manual check:
 
 1. Start with the console exporter and run a normal prompt.
 2. Run a prompt that triggers one or more tool calls.
@@ -175,10 +210,19 @@ Provider request payload information is attached as events on the active request
 5. Run `/otel-status` and `/otel-flush`.
 6. Repeat with an OTLP collector over HTTP and gRPC.
 
-Check that spans follow this hierarchy:
+What to verify:
 
-- `pi.request`
-- child `pi.turn`
-- child `pi.tool`
+- spans follow the request -> turn -> tool hierarchy
+- session and model events appear as standalone spans
+- provider request metadata shows up as span events
+- default mode emits hashes, counts, durations, and IDs only
+- raw bodies appear only after enabling the matching `PI_OTEL_CAPTURE_*` flags
 
-Check that default mode emits counts, durations, hashes, and IDs, while raw bodies only appear after enabling the relevant `PI_OTEL_CAPTURE_*` flags.
+## Development Notes
+
+This package currently has no build step and no static checks configured:
+
+```bash
+npm run build
+npm run check
+```
